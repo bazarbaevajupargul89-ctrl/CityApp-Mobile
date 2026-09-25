@@ -9,9 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { authService } from '../src/services/auth';
 
-export default function AuthScreen({ onAuthSuccess }) {
+const AuthScreen = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,29 +25,30 @@ export default function AuthScreen({ onAuthSuccess }) {
       return;
     }
 
-    setLoading(true);
-    try {
-      if (isLogin) {
-        const user = await authService.login(email, password);
-        onAuthSuccess(user);
-      } else {
-        if (!name) {
-          setError('Name is required');
-          setLoading(false);
-          return;
-        }
-        const user = await authService.signup(email, password, name);
-        onAuthSuccess(user);
-      }
-    } catch (err) {
-      setError(err.message || 'Auth failed');
+    if (!isLogin && !name) {
+      setError('Name is required');
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+    setTimeout(() => {
+      const user = {
+        uid: Math.random().toString(36).substr(2, 9),
+        email,
+        name: name || 'User',
+        photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+        followers: 120000,
+        likes: 8400000,
+        bio: 'I create amazing content ✨',
+      };
+      onAuthSuccess(user);
+      setLoading(false);
+    }, 800);
   };
 
   return (
     <LinearGradient colors={['#0f172a', '#111827']} style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.logo}>ReelFlow</Text>
           <Text style={styles.subtitle}>
@@ -113,24 +113,21 @@ export default function AuthScreen({ onAuthSuccess }) {
       </ScrollView>
     </LinearGradient>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
   content: {
-    flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingVertical: 60,
+    minHeight: '100%',
   },
   logo: {
     color: '#fff',
-    fontSize: 40,
+    fontSize: 48,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 12,
@@ -139,7 +136,7 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 18,
     textAlign: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
   },
   input: {
     backgroundColor: '#1f2937',
@@ -156,7 +153,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 20,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -175,7 +172,9 @@ const styles = StyleSheet.create({
   toggleText: {
     color: '#60a5fa',
     textAlign: 'center',
-    marginTop: 18,
+    marginTop: 20,
     fontSize: 14,
   },
 });
+
+export default AuthScreen;

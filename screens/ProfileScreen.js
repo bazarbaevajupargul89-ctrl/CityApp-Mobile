@@ -10,25 +10,21 @@ import {
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRoute } from '@react-navigation/native';
 import { locales } from '../src/locales';
-import { authService } from '../src/services/auth';
 
-export default function ProfileScreen({ currentUser, onLogout }) {
+const ProfileScreen = () => {
+  const route = useRoute();
+  const { user, onLogout } = route.params || {};
   const lang = 'ru';
   const t = locales[lang];
   const [editMode, setEditMode] = useState(false);
-  const [editName, setEditName] = useState(currentUser?.name || '');
-  const [editBio, setEditBio] = useState('Создаю красивый контент ✨');
+  const [editName, setEditName] = useState(user?.name || 'User');
+  const [editBio, setEditBio] = useState(user?.bio || 'I create amazing content ✨');
 
-  const handleSaveProfile = async () => {
-    try {
-      await authService.updateProfile(currentUser?.uid, {
-        name: editName,
-        bio: editBio,
-      });
-      setEditMode(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
     }
   };
 
@@ -37,22 +33,26 @@ export default function ProfileScreen({ currentUser, onLogout }) {
       <LinearGradient colors={['#0f172a', '#111827']} style={styles.header}>
         <Image
           source={{
-            uri: currentUser?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+            uri: user?.photoURL || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
           }}
           style={styles.avatar}
         />
 
-        <Text style={styles.name}>{currentUser?.name || 'User'}</Text>
-        <Text style={styles.handle}>{t.nick}</Text>
+        <Text style={styles.name}>{editName}</Text>
+        <Text style={styles.handle}>@{editName.toLowerCase().replace(/\s/g, '')}</Text>
         <Text style={styles.bio}>{editBio}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>120K</Text>
+            <Text style={styles.statNumber}>
+              {(user?.followers / 1000).toFixed(0)}K
+            </Text>
             <Text style={styles.statLabel}>{t.followers}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>8.4M</Text>
+            <Text style={styles.statNumber}>
+              {(user?.likes / 1000000).toFixed(1)}M
+            </Text>
             <Text style={styles.statLabel}>{t.likes}</Text>
           </View>
         </View>
@@ -61,7 +61,7 @@ export default function ProfileScreen({ currentUser, onLogout }) {
           <TouchableOpacity style={styles.primaryBtn} onPress={() => setEditMode(true)}>
             <Text style={styles.primaryText}>Edit Profile</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.secondaryBtn} onPress={onLogout}>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={handleLogout}>
             <Text style={styles.secondaryText}>Logout</Text>
           </TouchableOpacity>
         </View>
@@ -112,7 +112,7 @@ export default function ProfileScreen({ currentUser, onLogout }) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={handleSaveProfile}
+                onPress={() => setEditMode(false)}
               >
                 <Text style={styles.modalButtonText}>Save</Text>
               </TouchableOpacity>
@@ -122,7 +122,7 @@ export default function ProfileScreen({ currentUser, onLogout }) {
       </Modal>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -296,3 +296,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
+export default ProfileScreen;

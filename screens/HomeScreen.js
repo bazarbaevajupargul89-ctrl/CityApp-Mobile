@@ -11,56 +11,57 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { locales } from '../src/locales';
-import { apiService } from '../src/services/api';
 
 const { height } = Dimensions.get('window');
 
-export default function HomeScreen() {
+const reels = [
+  {
+    id: 1,
+    user: 'Aru',
+    handle: '@aru',
+    title: 'Sunset city vibes',
+    likes: 12800,
+    comments: 822,
+    colorA: '#ff7b72',
+    colorB: '#f59e0b',
+    music: 'Night Drive',
+  },
+  {
+    id: 2,
+    user: 'Mira',
+    handle: '@mira',
+    title: 'Creative studio',
+    likes: 21400,
+    comments: 1339,
+    colorA: '#60a5fa',
+    colorB: '#8b5cf6',
+    music: 'Skyline',
+  },
+  {
+    id: 3,
+    user: 'Dias',
+    handle: '@dias',
+    title: 'Coffee & friends',
+    likes: 9800,
+    comments: 514,
+    colorA: '#34d399',
+    colorB: '#10b981',
+    music: 'Morning Mood',
+  },
+];
+
+const HomeScreen = () => {
   const lang = 'ru';
   const t = locales[lang];
-  const [reels, setReels] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [likedReels, setLikedReels] = useState({});
 
-  useEffect(() => {
-    loadReels();
-  }, []);
-
-  const loadReels = async () => {
-    setLoading(true);
-    try {
-      const data = await apiService.getReels();
-      setReels(data);
-    } catch (error) {
-      console.error('Error loading reels:', error);
-    }
-    setLoading(false);
-  };
-
-  const toggleLike = async (reelId) => {
+  const toggleLike = (reelId) => {
     setLikedReels((prev) => ({
       ...prev,
       [reelId]: !prev[reelId],
     }));
-
-    try {
-      if (!likedReels[reelId]) {
-        await apiService.addLike(reelId, 'user-id');
-      } else {
-        await apiService.removeLike(reelId, 'user-id');
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
   };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#fff" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -129,16 +130,12 @@ export default function HomeScreen() {
       </ScrollView>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0b1020',
-  },
-  centerContent: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   topBar: {
     position: 'absolute',
@@ -247,3 +244,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+export default HomeScreen;
