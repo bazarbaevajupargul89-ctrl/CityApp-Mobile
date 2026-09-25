@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { locales } from '../src/locales';
 
-const CreateScreen = () => {
+export default function CreateScreen() {
   const lang = 'ru';
   const t = locales[lang];
 
@@ -32,7 +32,7 @@ const CreateScreen = () => {
       </TouchableOpacity>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -42,18 +42,8 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     alignItems: 'center',
   },
-  title: {
-    color: '#fff',
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  sub: {
-    color: '#cbd5e1',
-    fontSize: 16,
-    marginBottom: 32,
-    textAlign: 'center',
-  },
+  title: { color: '#fff', fontSize: 30, fontWeight: '700', marginBottom: 12 },
+  sub: { color: '#cbd5e1', fontSize: 16, marginBottom: 32, textAlign: 'center' },
   recordBtn: {
     width: 140,
     height: 140,
@@ -65,17 +55,8 @@ const styles = StyleSheet.create({
     borderColor: '#fca5a5',
     marginBottom: 30,
   },
-  recordText: {
-    color: '#fff',
-    fontSize: 52,
-    lineHeight: 60,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 30,
-  },
+  recordText: { color: '#fff', fontSize: 52, lineHeight: 60 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 30 },
   action: {
     backgroundColor: '#111827',
     paddingVertical: 14,
@@ -85,11 +66,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     alignItems: 'center',
   },
-  actionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  actionText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   primaryBtn: {
     backgroundColor: '#8b5cf6',
     width: '100%',
@@ -97,11 +74,5 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
   },
-  primaryText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  primaryText: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
 });
-
-export default CreateScreen;

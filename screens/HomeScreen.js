@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,58 +10,84 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { query, collection, getDocs, orderBy } from 'firebase/firestore';
+import { db, auth } from '../src/firebase';
+import { signOut } from 'firebase/auth';
 import { locales } from '../src/locales';
 
 const { height } = Dimensions.get('window');
 
-const reels = [
+const sampleReels = [
   {
-    id: 1,
+    id: '1',
     user: 'Aru',
     handle: '@aru',
     title: 'Sunset city vibes',
-    likes: 12800,
-    comments: 822,
+    likes: ['u1', 'u2'],
+    comments: [{ userId: 'u1', text: 'Nice' }],
     colorA: '#ff7b72',
     colorB: '#f59e0b',
     music: 'Night Drive',
   },
   {
-    id: 2,
+    id: '2',
     user: 'Mira',
     handle: '@mira',
     title: 'Creative studio',
-    likes: 21400,
-    comments: 1339,
+    likes: ['u1'],
+    comments: [{ userId: 'u1', text: 'Cool' }],
     colorA: '#60a5fa',
     colorB: '#8b5cf6',
     music: 'Skyline',
   },
   {
-    id: 3,
+    id: '3',
     user: 'Dias',
     handle: '@dias',
     title: 'Coffee & friends',
-    likes: 9800,
-    comments: 514,
+    likes: [],
+    comments: [],
     colorA: '#34d399',
     colorB: '#10b981',
     music: 'Morning Mood',
   },
 ];
 
-const HomeScreen = () => {
+export default function HomeScreen() {
   const lang = 'ru';
   const t = locales[lang];
+  const [reels, setReels] = useState(sampleReels);
   const [loading, setLoading] = useState(false);
-  const [likedReels, setLikedReels] = useState({});
 
-  const toggleLike = (reelId) => {
-    setLikedReels((prev) => ({
-      ...prev,
-      [reelId]: !prev[reelId],
-    }));
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const q = query(collection(db, 'reels'), orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        if (data.length > 0) setReels(data);
+      } catch (e) {
+        console.log('reels load error', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
   };
+
+  if (loading && reels.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color="#fff" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -71,13 +97,16 @@ const HomeScreen = () => {
           <Text style={styles.tabActive}>{t.forYou}</Text>
           <Text style={styles.tab}>{t.following}</Text>
         </View>
+        <TouchableOpacity onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView pagingEnabled showsVerticalScrollIndicator={false}>
         {reels.map((item) => (
           <LinearGradient
             key={item.id}
-            colors={[item.colorA, item.colorB, '#0b1020']}
+            colors={[item.colorA || '#ff7b72', item.colorB || '#f59e0b', '#0b1020']}
             style={styles.reel}
           >
             <View style={styles.overlay}>
@@ -90,33 +119,26 @@ const HomeScreen = () => {
                     style={styles.avatar}
                   />
                   <View>
-                    <Text style={styles.user}>{item.user}</Text>
-                    <Text style={styles.handle}>{item.handle}</Text>
+                    <Text style={styles.user}>{item.user || 'User'}</Text>
+                    <Text style={styles.handle}>{item.handle || '@user'}</Text>
                   </View>
                 </View>
               </View>
 
               <View style={styles.bottomContent}>
                 <View style={styles.textBlock}>
-                  <Text style={styles.title}>{item.title}</Text>
-                  <Text style={styles.meta}>🎵 {item.music}</Text>
+                  <Text style={styles.title}>{item.title || 'New Reel'}</Text>
+                  <Text style={styles.meta}>🎵 {item.music || 'Music'}</Text>
                 </View>
 
                 <View style={styles.sideColumn}>
-                  <TouchableOpacity
-                    style={styles.iconBox}
-                    onPress={() => toggleLike(item.id)}
-                  >
-                    <Text style={styles.icon}>
-                      {likedReels[item.id] ? '♥' : '♡'}
-                    </Text>
-                    <Text style={styles.counter}>
-                      {item.likes.toLocaleString()}
-                    </Text>
+                  <TouchableOpacity style={styles.iconBox}>
+                    <Text style={styles.icon}>♡</Text>
+                    <Text style={styles.counter}>{(item.likes || []).length}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.iconBox}>
                     <Text style={styles.icon}>💬</Text>
-                    <Text style={styles.counter}>{item.comments}</Text>
+                    <Text style={styles.counter}>{(item.comments || []).length}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.iconBox}>
                     <Text style={styles.icon}>↗</Text>
@@ -130,13 +152,11 @@ const HomeScreen = () => {
       </ScrollView>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b1020',
-  },
+  container: { flex: 1, backgroundColor: '#0b1020' },
+  centerContent: { justifyContent: 'center', alignItems: 'center' },
   topBar: {
     position: 'absolute',
     top: 40,
@@ -148,30 +168,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  logo: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 24,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  tab: {
-    color: '#cbd5e1',
-    fontSize: 15,
-    opacity: 0.7,
-  },
-  tabActive: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  reel: {
-    height,
-    width: '100%',
-    justifyContent: 'space-between',
-  },
+  logo: { color: '#fff', fontWeight: '700', fontSize: 24 },
+  tabRow: { flexDirection: 'row', gap: 16 },
+  tab: { color: '#cbd5e1', fontSize: 15, opacity: 0.7 },
+  tabActive: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  logoutText: { color: '#fff', fontSize: 12, opacity: 0.8 },
+  reel: { height, width: '100%', justifyContent: 'space-between' },
   overlay: {
     flex: 1,
     justifyContent: 'space-between',
@@ -180,11 +182,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     backgroundColor: 'rgba(0,0,0,0.18)',
   },
-  headerInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  headerInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   profileChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -193,56 +191,15 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingRight: 10,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  user: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  handle: {
-    color: '#e2e8f0',
-    fontSize: 12,
-  },
-  bottomContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  textBlock: {
-    flex: 1,
-    paddingRight: 14,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  meta: {
-    color: '#f3f4f6',
-    fontSize: 14,
-  },
-  sideColumn: {
-    alignItems: 'center',
-    gap: 18,
-  },
-  iconBox: {
-    alignItems: 'center',
-  },
-  icon: {
-    fontSize: 28,
-  },
-  counter: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '600',
-  },
+  avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: '#fff' },
+  user: { color: '#fff', fontWeight: '700' },
+  handle: { color: '#e2e8f0', fontSize: 12 },
+  bottomContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  textBlock: { flex: 1, paddingRight: 14 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 8 },
+  meta: { color: '#f3f4f6', fontSize: 14 },
+  sideColumn: { alignItems: 'center', gap: 18 },
+  iconBox: { alignItems: 'center' },
+  icon: { fontSize: 28 },
+  counter: { color: '#fff', fontSize: 12, marginTop: 4, fontWeight: '600' },
 });
-
-export default HomeScreen;

@@ -9,8 +9,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../src/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
-const AuthScreen = ({ onAuthSuccess }) => {
+export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +23,7 @@ const AuthScreen = ({ onAuthSuccess }) => {
 
   const handleAuth = async () => {
     setError('');
+
     if (!email || !password) {
       setError('Email and password required');
       return;
@@ -31,19 +35,30 @@ const AuthScreen = ({ onAuthSuccess }) => {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const user = {
-        uid: Math.random().toString(36).substr(2, 9),
-        email,
-        name: name || 'User',
-        photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
-        followers: 120000,
-        likes: 8400000,
-        bio: 'I create amazing content ✨',
-      };
-      onAuthSuccess(user);
+
+    try {
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        await setDoc(doc(db, 'users', user.uid), {
+          uid: user.uid,
+          email,
+          name,
+          bio: 'I create amazing content ✨',
+          photoURL: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+          followers: 0,
+          likes: 0,
+          createdAt: new Date(),
+        });
+      }
+    } catch (err) {
+      setError(err.message || 'Authentication failed');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   return (
@@ -104,21 +119,17 @@ const AuthScreen = ({ onAuthSuccess }) => {
 
           <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
             <Text style={styles.toggleText}>
-              {isLogin
-                ? "Don't have account? Sign Up"
-                : 'Already have account? Login'}
+              {isLogin ? "Don't have an account? Sign Up" : 'Already have an account? Login'}
             </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </LinearGradient>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   content: {
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -155,9 +166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: {
     color: '#fff',
     fontSize: 16,
@@ -176,5 +185,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
-export default AuthScreen;

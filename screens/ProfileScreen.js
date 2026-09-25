@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,22 +10,44 @@ import {
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRoute } from '@react-navigation/native';
+import { auth, db } from '../src/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { locales } from '../src/locales';
 
-const ProfileScreen = () => {
-  const route = useRoute();
-  const { user, onLogout } = route.params || {};
+export default function ProfileScreen() {
   const lang = 'ru';
   const t = locales[lang];
+  const [user, setUser] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editName, setEditName] = useState(user?.name || 'User');
-  const [editBio, setEditBio] = useState(user?.bio || 'I create amazing content ✨');
+  const [editName, setEditName] = useState('');
+  const [editBio, setEditBio] = useState('');
 
-  const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    }
+  useEffect(() => {
+    const load = async () => {
+      if (!auth.currentUser) return;
+      const snap = await getDoc(doc(db, 'users', auth.currentUser.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        setUser(data);
+        setEditName(data.name || '');
+        setEditBio(data.bio || '');
+      }
+    };
+
+    load();
+  }, []);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+
+  const saveProfile = async () => {
+    if (!auth.currentUser) return;
+    const data = { name: editName, bio: editBio };
+    await updateDoc(doc(db, 'users', auth.currentUser.uid), data);
+    setUser((prev) => ({ ...prev, ...data }));
+    setEditMode(false);
   };
 
   return (
@@ -38,21 +60,17 @@ const ProfileScreen = () => {
           style={styles.avatar}
         />
 
-        <Text style={styles.name}>{editName}</Text>
-        <Text style={styles.handle}>@{editName.toLowerCase().replace(/\s/g, '')}</Text>
-        <Text style={styles.bio}>{editBio}</Text>
+        <Text style={styles.name}>{user?.name || 'User'}</Text>
+        <Text style={styles.handle}>{t.nick}</Text>
+        <Text style={styles.bio}>{user?.bio || t.bio}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>
-              {(user?.followers / 1000).toFixed(0)}K
-            </Text>
+            <Text style={styles.statNumber}>120K</Text>
             <Text style={styles.statLabel}>{t.followers}</Text>
           </View>
           <View style={styles.statBox}>
-            <Text style={styles.statNumber}>
-              {(user?.likes / 1000000).toFixed(1)}M
-            </Text>
+            <Text style={styles.statNumber}>8.4M</Text>
             <Text style={styles.statLabel}>{t.likes}</Text>
           </View>
         </View>
@@ -104,15 +122,13 @@ const ProfileScreen = () => {
             />
 
             <View style={styles.modalButtonRow}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setEditMode(false)}
-              >
+              <TouchableOpacity style={styles.modalButton} onPress={() => setEditMode(false)}>
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.modalButton, styles.modalButtonPrimary]}
-                onPress={() => setEditMode(false)}
+                onPress={saveProfile}
               >
                 <Text style={styles.modalButtonText}>Save</Text>
               </TouchableOpacity>
@@ -122,13 +138,10 @@ const ProfileScreen = () => {
       </Modal>
     </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b1020',
-  },
+  container: { flex: 1, backgroundColor: '#0b1020' },
   header: {
     paddingHorizontal: 22,
     paddingTop: 50,
@@ -143,23 +156,9 @@ const styles = StyleSheet.create({
     borderColor: '#f8fafc',
     marginBottom: 16,
   },
-  name: {
-    color: '#fff',
-    fontSize: 30,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  handle: {
-    color: '#8b5cf6',
-    fontSize: 16,
-    marginBottom: 12,
-  },
-  bio: {
-    color: '#cbd5e1',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  name: { color: '#fff', fontSize: 30, fontWeight: '700', marginBottom: 4 },
+  handle: { color: '#8b5cf6', fontSize: 16, marginBottom: 12 },
+  bio: { color: '#cbd5e1', fontSize: 16, textAlign: 'center', marginBottom: 20 },
   statsRow: {
     width: '100%',
     flexDirection: 'row',
@@ -175,20 +174,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 8,
   },
-  statNumber: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  statLabel: {
-    color: '#cbd5e1',
-    marginTop: 4,
-  },
-  buttonRow: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  statNumber: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  statLabel: { color: '#cbd5e1', marginTop: 4 },
+  buttonRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between' },
   primaryBtn: {
     backgroundColor: '#8b5cf6',
     borderRadius: 12,
@@ -205,28 +193,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  primaryText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  secondaryText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
-  content: {
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-  },
-  sectionTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  videoGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
+  primaryText: { color: '#fff', fontWeight: '700' },
+  secondaryText: { color: '#fff', fontWeight: '700' },
+  content: { paddingHorizontal: 18, paddingVertical: 20 },
+  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  videoGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   videoCard: {
     width: '48%',
     backgroundColor: '#111827',
@@ -234,20 +205,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
   },
-  videoTitle: {
-    color: '#fff',
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  videoMeta: {
-    color: '#cbd5e1',
-    fontSize: 12,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end',
-  },
+  videoTitle: { color: '#fff', fontWeight: '700', marginBottom: 4 },
+  videoMeta: { color: '#cbd5e1', fontSize: 12 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalContent: {
     backgroundColor: '#111827',
     borderTopLeftRadius: 20,
@@ -256,12 +216,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     paddingBottom: 40,
   },
-  modalTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 20,
-  },
+  modalTitle: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 20 },
   input: {
     backgroundColor: '#1f2937',
     borderRadius: 12,
@@ -272,15 +227,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  inputMultiline: {
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  modalButtonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 20,
-  },
+  inputMultiline: { minHeight: 80, textAlignVertical: 'top' },
+  modalButtonRow: { flexDirection: 'row', gap: 12, marginTop: 20 },
   modalButton: {
     flex: 1,
     backgroundColor: '#1f2937',
@@ -288,13 +236,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: 'center',
   },
-  modalButtonPrimary: {
-    backgroundColor: '#8b5cf6',
-  },
-  modalButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-  },
+  modalButtonPrimary: { backgroundColor: '#8b5cf6' },
+  modalButtonText: { color: '#fff', fontWeight: '700' },
 });
-
-export default ProfileScreen;

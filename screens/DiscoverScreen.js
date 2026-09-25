@@ -5,7 +5,7 @@ import { locales } from '../src/locales';
 
 const tags = ['Fashion', 'Travel', 'Tech', 'Food', 'Music', 'Life'];
 
-const DiscoverScreen = () => {
+export default function DiscoverScreen() {
   const lang = 'ru';
   const t = locales[lang];
 
@@ -36,7 +36,7 @@ const DiscoverScreen = () => {
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -51,9 +51,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 16,
   },
-  chipsWrap: {
-    marginBottom: 18,
-  },
+  chipsWrap: { marginBottom: 18 },
   chip: {
     backgroundColor: '#111827',
     borderRadius: 999,
@@ -63,35 +61,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  chipActive: {
-    backgroundColor: '#f97316',
-    borderColor: '#f97316',
-  },
-  chipText: {
-    color: '#e2e8f0',
-    fontWeight: '600',
-  },
-  chipTextActive: {
-    color: '#fff',
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 14,
-  },
-  card: {
-    width: '48%',
-    height: 180,
-    borderRadius: 20,
-    padding: 16,
-    justifyContent: 'flex-end',
-  },
-  cardText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
+  chipActive: { backgroundColor: '#f97316', borderColor: '#f97316' },
+  chipText: { color: '#e2e8f0', fontWeight: '600' },
+  chipTextActive: { color: '#fff' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 14 },
+  card: { width: '48%', height: 180, borderRadius: 20, padding: 16, justifyContent: 'flex-end' },
+  cardText: { color: '#fff', fontSize: 22, fontWeight: '700' },
 });
-
-export default DiscoverScreen;

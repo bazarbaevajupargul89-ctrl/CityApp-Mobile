@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
+import { onAuthStateChanged } from 'firebase/auth';
 
+import { auth } from './src/firebase';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import DiscoverScreen from './screens/DiscoverScreen';
@@ -25,23 +27,23 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate user check
-    setTimeout(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       setLoading(false);
-    }, 500);
+    });
+
+    return unsubscribe;
   }, []);
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#0b1020' }} />
-    );
+    return <View style={{ flex: 1, backgroundColor: '#0b1020' }} />;
   }
 
   if (!user) {
     return (
       <>
         <StatusBar style="light" />
-        <AuthScreen onAuthSuccess={setUser} />
+        <AuthScreen />
       </>
     );
   }
@@ -68,14 +70,10 @@ export default function App() {
             ),
           })}
         >
-          <Tab.Screen name="Home" component={HomeScreen} initialParams={{ user }} />
+          <Tab.Screen name="Home" component={HomeScreen} />
           <Tab.Screen name="Discover" component={DiscoverScreen} />
-          <Tab.Screen name="Create" component={CreateScreen} initialParams={{ user }} />
-          <Tab.Screen
-            name="Profile"
-            component={ProfileScreen}
-            initialParams={{ user, onLogout: () => setUser(null) }}
-          />
+          <Tab.Screen name="Create" component={CreateScreen} />
+          <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </NavigationContainer>
     </>
